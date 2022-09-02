@@ -1,4 +1,4 @@
-import type {RoomInterface} from "wechaty/dist/esm/src/user-modules/room";
+import type {IConfig} from "./type";
 
 const config: IConfig = {
   rooms: [
@@ -15,38 +15,3 @@ const config: IConfig = {
 };
 
 export default config;
-
-interface IConfig {
-  rooms: IRoomConfig[],
-}
-
-interface ISetting {
-  rooms: IRoomSetting[],
-}
-
-interface IRoomConfig extends IRoom {
-  notifyRooms: INotifyRoomConfig[],
-}
-
-interface IRoomSetting extends IRoom {
-  notifyRooms: INotifyRoomSetting[],
-}
-
-interface IRoom {
-  topic: string,
-  people: string[],
-}
-
-type INotifyRoomConfig = string;
-
-interface INotifyRoomSetting {
-  topic: string,
-  ref?: RoomInterface | null,
-}
-
-export type {
-  IConfig,
-  ISetting,
-  IRoomConfig,
-  INotifyRoomSetting,
-}

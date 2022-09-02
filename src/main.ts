@@ -6,7 +6,8 @@ import {
 } from 'wechaty';
 // @ts-ignore
 import qrcodeTerminal from 'qrcode-terminal';
-import config, {INotifyRoomSetting, ISetting} from './config.js';
+import config from './config.js';
+import type {INotifyRoomSetting, ISetting} from './type.js';
 import log from './logger.js';
 
 // TODO: use hotImport to renew config.js
