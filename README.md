@@ -25,15 +25,16 @@ src/config.ts
 * https://github.com/wechaty/getting-started/issues/271
 * https://wechaty.js.org/docs/api/room
 
-## TODO
+## Troubleshooting
 还是有很多奇怪的异常错误需要处理。  
 **不显示二维码**  
 * GError: there is no WechatyBro in browser(yet)  
 多试几次后解决。  
 * Error: @swc/core threw an error when attempting to validate swc compiler options.  
+一般是依赖包的问题，确保运行环境是Node v16+，以及node_modules是在Node v16+环境下安装的。
 
 **手机扫码后，页面打不开**  
-这应该是网络问题。
+这应该是网络问题导致的。
 
 **手机扫码成功后**
 * GError: onLogin() TTL expired.  
