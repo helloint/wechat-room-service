@@ -7,26 +7,30 @@ import {
 // @ts-ignore
 import qrcodeTerminal from 'qrcode-terminal';
 import config from './config.js';
-import type {INotifyRoomSetting, ISetting} from './type.js';
+import type {IRoomSetting} from './type.js';
 import log from './logger.js';
 
 // TODO: use hotImport to renew config.js
 // import {hotImport} from "hot-import";
 // const config: IConfig = await hotImport('config.js')
 
-const setting: ISetting = {
+// init setting based on the config
+const setting: IRoomSetting = {
   rooms: config.rooms.map(room => {
-    return {
-      topic: room.topic,
-      people: room.people,
-      notifyRooms: room.notifyRooms.map(notifyRoomTopic => {
-        return {
-          topic: notifyRoomTopic,
-          ref: null,
-        }
-      }),
-      ref: null,
+    if ('notifies' in room) {
+      return {
+        topic: room.topic,
+        people: room.people,
+        notifies: room.notifies.map(notifyRoomTopic => {
+          return {
+            topic: notifyRoomTopic,
+            ref: null,
+          }
+        }),
+        ref: null,
+      }
     }
+    return {...room}
   }),
 }
 
@@ -48,15 +52,30 @@ function onScan(qrcode: string, status: ScanStatus) {
 function onLogin(user: Contact) {
   log.info('[StarterBot] %s login', user)
 
-  setting.rooms.forEach((async listenerRoomSetting => {
-    const listenerRoom = await bot.Room.find({topic: listenerRoomSetting.topic});
-    if (listenerRoom) {
-      log.info('# registered listener room, topic: %s', listenerRoomSetting.topic);
-      listenerRoomSetting.notifyRooms.forEach((async notifyRoomSetting => {
-        const notifyRoom = await bot.Room.find({topic: notifyRoomSetting.topic});
-        if (notifyRoom) {
-          log.info('## registered notify room, topic: %s', notifyRoomSetting.topic);
-          notifyRoomSetting.ref = notifyRoom;
+  setting.rooms.forEach((async roomSetting => {
+    if ('notifies' in roomSetting) {
+      const listenerRoom = await bot.Room.find({topic: roomSetting.topic});
+      if (listenerRoom) {
+        log.info('# registered listener room, topic: %s', roomSetting.topic);
+        roomSetting.notifies.forEach((async notifyRoomSetting => {
+          const notifyRoom = await bot.Room.find({topic: notifyRoomSetting.topic});
+          if (notifyRoom) {
+            log.info('## registered notify room, topic: %s', notifyRoomSetting.topic);
+            notifyRoomSetting.ref = notifyRoom;
+          }
+        }));
+      } else {
+        log.warn('# listener room not found, topic: %s', roomSetting.topic);
+      }
+    } else {
+      log.info('# process share group, name: %s', roomSetting.name);
+      roomSetting.shares.forEach((async shareRoomSetting => {
+        const shareRoom = await bot.Room.find({topic: shareRoomSetting.topic});
+        if (shareRoom) {
+          log.info('# registered share room, topic: %s', shareRoomSetting.topic);
+          shareRoomSetting.ref = shareRoom;
+        } else {
+          log.warn('# share room not found, topic: %s', shareRoomSetting.topic);
         }
       }));
     }
@@ -80,21 +99,76 @@ async function onMessage(msg: Message) {
       log.debug(`sender.id: ${sender.id}, sender.name: ${sender.name()}, isSelf: ${sender.self()}`);
 
       setting.rooms.forEach(roomSetting => {
-        if (roomSetting.topic === topic) {
-          log.verbose(`room match!`);
-          let senderMatch = roomSetting.people.find(name => name === sender.name());
-          if (senderMatch) {
-            log.verbose(`sender match!`);
-            roomSetting.notifyRooms.forEach((notifyRoomSetting: INotifyRoomSetting) => {
-              let notifyRoom = notifyRoomSetting.ref;
-              if (notifyRoom) {
-                log.debug(`notifyRoom found: ${notifyRoomSetting.topic}`);
-                // 过滤接龙。接龙属于文本信息，但每个群数据独立，转发没有意义。
-                if (msg.text().startsWith('#接龙')) {
-                  notifyRoom.say(sender.name() + ' 发起了一个群接龙。');
-                } else {
-                  msg.forward(notifyRoom);
-                  log.info(`[Notify Success]`);
+        if ('notifies' in roomSetting) {
+          if (roomSetting.topic === topic) {
+            log.verbose('room match!');
+            let senderMatch = true;
+            if (roomSetting.people && roomSetting.people.length > 0) {
+              senderMatch = !!roomSetting.people.find(name => name === sender.name());
+            }
+            if (senderMatch) {
+              log.verbose('sender match!');
+              roomSetting.notifies.forEach((notifyRoomSetting) => {
+                let notifyRoom = notifyRoomSetting.ref;
+                if (notifyRoom) {
+                  log.debug(`notifyRoom found: ${notifyRoomSetting.topic}`);
+                  // 过滤接龙。接龙属于文本信息，但每个群数据独立，转发没有意义。
+                  if (msg.text().startsWith('#接龙')) {
+                    notifyRoom.say(sender.name() + ' 发起了一个群接龙。');
+                  } else {
+                    msg.forward(notifyRoom);
+                    msg.text()
+                    log.info('[Status] Notify Success');
+                  }
+                }
+              });
+            }
+          }
+        } else {
+
+          if (msg.type() === bot.Message.Type.Text) {
+            roomSetting.shares.forEach(shareRoomSetting => {
+              if (shareRoomSetting.topic === topic) {
+                log.verbose('room match!');
+                let senderMatch = true;
+                if (shareRoomSetting.people && shareRoomSetting.people.length > 0) {
+                  senderMatch = !!shareRoomSetting.people.find(name => name === sender.name());
+                }
+
+                if (senderMatch) {
+                  log.verbose(`sender match!`);
+
+                  const talkerDisplayName = msg.talker().name();
+                  const roomShortName = shareRoomSetting.abbr || shareRoomSetting.topic || 'Nowhere';
+                  let msgPrefix = `[${talkerDisplayName}@${roomShortName}]: `;
+                  let message = '';
+                  // process the message pattern
+                  /*
+                  [idealist@Home 9]: 只要用gateway，就是经过服务器绕一圈
+                  [Juzi@Home 6]: 「Friday BOT：[Wayne 毛@Home 2]: [咖啡]」
+                  - - - - - - - - - - - - - - -
+                  [偷笑]
+                  [Juzi@Home 6]: 「Friday BOT：[Wayne 毛@Home 2]: [咖啡]」
+                  - - - - - - - - - - - - - - -
+                  [偷笑]
+                   */
+                  if (msg.text().startsWith('#接龙')) {
+                    // 过滤接龙。接龙属于文本信息，但每个群数据独立，转发没有意义。
+                    message = msgPrefix + '发起了一个群接龙。';
+                  } else {
+                    message = msgPrefix + msg.text();
+                  }
+                  log.info('message: ' + message);
+
+                  roomSetting.shares.filter(room => room.topic != topic)
+                    .forEach(notifyRoomSetting => {
+                      let notifyRoom = notifyRoomSetting.ref;
+                      if (notifyRoom) {
+                        log.debug(`notifyRoom found: ${notifyRoomSetting.topic}: `);
+                        notifyRoom.say(message);
+                        log.info('[Status] Notify Success');
+                      }
+                    });
                 }
               }
             });
