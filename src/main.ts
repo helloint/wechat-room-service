@@ -112,9 +112,9 @@ async function onMessage(msg: Message) {
                 let notifyRoom = notifyRoomSetting.ref;
                 if (notifyRoom) {
                   log.debug(`notifyRoom found: ${notifyRoomSetting.topic}`);
-                  // 过滤接龙。接龙属于文本信息，但每个群数据独立，转发没有意义。
+                  // 过滤接龙。接龙属于文本信息，但每个群数据独立，直接转发没有意义。
                   if (msg.text().startsWith('#接龙')) {
-                    notifyRoom.say(sender.name() + ' 发起了一个群接龙。');
+                    notifyRoom.say(sender.name() + ' 发起了一个群接龙: ' + getJieLongTitle(msg.text()));
                   } else {
                     msg.forward(notifyRoom);
                     msg.text()
@@ -153,8 +153,8 @@ async function onMessage(msg: Message) {
                   [偷笑]
                    */
                   if (msg.text().startsWith('#接龙')) {
-                    // 过滤接龙。接龙属于文本信息，但每个群数据独立，转发没有意义。
-                    message = msgPrefix + '发起了一个群接龙。';
+                    // 过滤接龙。接龙属于文本信息，但每个群数据独立，直接转发没有意义。
+                    message = msgPrefix + '发起了一个群接龙: ' + getJieLongTitle(msg.text());
                   } else {
                     message = msgPrefix + msg.text();
                   }
@@ -181,6 +181,22 @@ async function onMessage(msg: Message) {
   }
 }
 
+/**
+ * 返回接龙的主题
+ * Sample: #接龙<br/>234<br/>234<br/><br/>1. Wayne 毛，
+ * return: <br/>234<br/>234<br/><br/>
+ * @param message
+ */
+const getJieLongTitle = (message: string): string => {
+  const content = message.split('#接龙');
+  log.info(message);
+  if (content.length >= 2 && content[1]) {
+    return content[1].split('1.')[0] || '';
+  } else {
+    return '';
+  }
+}
+
 const bot = WechatyBuilder.build({
   name: 'room-message-forward',
   /**
@@ -195,6 +211,7 @@ const bot = WechatyBuilder.build({
    *  - wechaty-puppet-padlocal (pad protocol, token required)
    *  - etc. see: <https://wechaty.js.org/docs/puppet-providers/>
    */
+  // Use UOS for Newly Wechat account
   puppet: 'wechaty-puppet-wechat',
   puppetOptions: {
     uos: true  // 开启uos协议
