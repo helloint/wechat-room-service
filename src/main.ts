@@ -4,11 +4,11 @@ import {
   ScanStatus,
   WechatyBuilder,
 } from 'wechaty';
+import log from './logger.js';
 // @ts-ignore
 import qrcodeTerminal from 'qrcode-terminal';
 import config from './config.js';
 import type {IRoomSetting} from './type.js';
-import log from './logger.js';
 
 // TODO: use hotImport to renew config.js
 // import {hotImport} from "hot-import";
@@ -40,42 +40,42 @@ function onScan(qrcode: string, status: ScanStatus) {
       'https://wechaty.js.org/qrcode/',
       encodeURIComponent(qrcode),
     ].join('')
-    log.info('[StarterBot] onScan: %s(%s) - %s', ScanStatus[status], status, qrcodeImageUrl)
+    log.info('StarterBot', 'onScan: %s(%s) - %s', ScanStatus[status], status, qrcodeImageUrl)
 
     qrcodeTerminal.generate(qrcode, {small: true})  // show qrcode on console
 
   } else {
-    log.info('[StarterBot] onScan: %s(%s)', ScanStatus[status], status)
+    log.info('StarterBot', 'onScan: %s(%s)', ScanStatus[status], status)
   }
 }
 
 function onLogin(user: Contact) {
-  log.info('[StarterBot] %s login', user)
+  log.info('StarterBot', '%s login', user)
 
   setting.rooms.forEach((async roomSetting => {
     if ('notifies' in roomSetting) {
       const listenerRoom = await bot.Room.find({topic: roomSetting.topic});
       if (listenerRoom) {
-        log.info('# registered listener room, topic: %s', roomSetting.topic);
+        log.info('App','# registered listener room, topic: %s', roomSetting.topic);
         roomSetting.notifies.forEach((async notifyRoomSetting => {
           const notifyRoom = await bot.Room.find({topic: notifyRoomSetting.topic});
           if (notifyRoom) {
-            log.info('## registered notify room, topic: %s', notifyRoomSetting.topic);
+            log.info('App','## registered notify room, topic: %s', notifyRoomSetting.topic);
             notifyRoomSetting.ref = notifyRoom;
           }
         }));
       } else {
-        log.warn('# listener room not found, topic: %s', roomSetting.topic);
+        log.warn('App','# listener room not found, topic: %s', roomSetting.topic);
       }
     } else {
-      log.info('# process share group, name: %s', roomSetting.name);
+      log.info('App','# process share group, name: %s', roomSetting.name);
       roomSetting.shares.forEach((async shareRoomSetting => {
         const shareRoom = await bot.Room.find({topic: shareRoomSetting.topic});
         if (shareRoom) {
-          log.info('# registered share room, topic: %s', shareRoomSetting.topic);
+          log.info('App','# registered share room, topic: %s', shareRoomSetting.topic);
           shareRoomSetting.ref = shareRoom;
         } else {
-          log.warn('# share room not found, topic: %s', shareRoomSetting.topic);
+          log.warn('App','# share room not found, topic: %s', shareRoomSetting.topic);
         }
       }));
     }
@@ -83,42 +83,42 @@ function onLogin(user: Contact) {
 }
 
 function onLogout(user: Contact) {
-  log.info('[StarterBot] %s logout', user)
+  log.info('StarterBot', '%s logout', user)
 }
 
 async function onMessage(msg: Message) {
   try {
-    log.info('[StarterBot] %s', msg.toString());
+    log.info('StarterBot', '%s', msg.toString());
     const room = msg.room();
     const topic = await room?.topic();
     const sender = msg.talker();
     // const content = msg.text()
     if (room && topic && !sender.self()) {
-      log.debug(`message.type: ${msg.type()}`);
-      log.debug(`room.id: ${room.id}, room.topic: ${topic}`);
-      log.debug(`sender.id: ${sender.id}, sender.name: ${sender.name()}, isSelf: ${sender.self()}`);
+      log.verbose('App',`message.type: ${msg.type()}`);
+      log.verbose('App',`room.id: ${room.id}, room.topic: ${topic}`);
+      log.verbose('App',`sender.id: ${sender.id}, sender.name: ${sender.name()}, isSelf: ${sender.self()}`);
 
       setting.rooms.forEach(roomSetting => {
         if ('notifies' in roomSetting) {
           if (roomSetting.topic === topic) {
-            log.verbose('room match!');
+            log.verbose('App','room match!');
             let senderMatch = true;
             if (roomSetting.people && roomSetting.people.length > 0) {
               senderMatch = !!roomSetting.people.find(name => name === sender.name());
             }
             if (senderMatch) {
-              log.verbose('sender match!');
+              log.verbose('App','sender match!');
               roomSetting.notifies.forEach((notifyRoomSetting) => {
                 let notifyRoom = notifyRoomSetting.ref;
                 if (notifyRoom) {
-                  log.debug(`notifyRoom found: ${notifyRoomSetting.topic}`);
+                  log.verbose('App',`notifyRoom found: ${notifyRoomSetting.topic}`);
                   // 过滤接龙。接龙属于文本信息，但每个群数据独立，直接转发没有意义。
                   if (msg.text().startsWith('#接龙')) {
                     notifyRoom.say(sender.name() + ' 发起了一个群接龙: ' + getJieLongTitle(msg.text()));
                   } else {
                     msg.forward(notifyRoom);
                     msg.text()
-                    log.info('[Status] Notify Success');
+                    log.info('App', 'Notify Success');
                   }
                 }
               });
@@ -129,14 +129,14 @@ async function onMessage(msg: Message) {
           if (msg.type() === bot.Message.Type.Text) {
             roomSetting.shares.forEach(shareRoomSetting => {
               if (shareRoomSetting.topic === topic) {
-                log.verbose('room match!');
+                log.verbose('App','room match!');
                 let senderMatch = true;
                 if (shareRoomSetting.people && shareRoomSetting.people.length > 0) {
                   senderMatch = !!shareRoomSetting.people.find(name => name === sender.name());
                 }
 
                 if (senderMatch) {
-                  log.verbose(`sender match!`);
+                  log.verbose('App',`sender match!`);
 
                   const talkerDisplayName = msg.talker().name();
                   const roomShortName = shareRoomSetting.abbr || shareRoomSetting.topic || 'Nowhere';
@@ -158,15 +158,15 @@ async function onMessage(msg: Message) {
                   } else {
                     message = msgPrefix + msg.text();
                   }
-                  log.info('message: ' + message);
+                  log.info('App','message: ' + message);
 
                   roomSetting.shares.filter(room => room.topic != topic)
                     .forEach(notifyRoomSetting => {
                       let notifyRoom = notifyRoomSetting.ref;
                       if (notifyRoom) {
-                        log.debug(`notifyRoom found: ${notifyRoomSetting.topic}: `);
+                        log.verbose('App',`notifyRoom found: ${notifyRoomSetting.topic}: `);
                         notifyRoom.say(message);
-                        log.info('[Status] Notify Success');
+                        log.info('App', 'Notify Success');
                       }
                     });
                 }
@@ -177,7 +177,7 @@ async function onMessage(msg: Message) {
       });
     }
   } catch (e) {
-    log.error('Bot on(message) exception: %s', e)
+    log.error('Bot', 'on(message) exception: %s', e)
   }
 }
 
@@ -189,7 +189,6 @@ async function onMessage(msg: Message) {
  */
 const getJieLongTitle = (message: string): string => {
   const content = message.split('#接龙');
-  log.info(message);
   if (content.length >= 2 && content[1]) {
     return content[1].split('1.')[0] || '';
   } else {
@@ -235,5 +234,5 @@ bot.on('logout', onLogout)
 bot.on('message', onMessage)
 
 bot.start()
-  .then(() => log.info('[StarterBot] Starter Bot Started.'))
-  .catch(e => log.error('[StarterBot] %s', e))
+  .then(() => log.info('StarterBot', 'Starter Bot Started.'))
+  .catch(e => log.error('StarterBot', '%s', e))

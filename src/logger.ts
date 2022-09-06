@@ -1,23 +1,11 @@
-import {createLogger, format, transports} from 'winston';
+import {
+  log,
+} from 'wechaty';
 
-const {combine, timestamp, printf, splat} = format;
+const logPrefix = process.env['WECHATY_LOG_PREFIX'];
+if (logPrefix) {
+  log.prefix(logPrefix);
+  log.silly('Logger', 'Config: WECHATY_LOG_PREFIX set prefix to %s', logPrefix);
+}
 
-const myFormat = printf(({level, message, timestamp}) => {
-  return `${timestamp} ${level}: ${message}`;
-});
-
-const logger = createLogger({
-  level: process.env['LOG_LEVEL'] || 'info',
-  format: combine(
-    splat(),
-    timestamp(),
-    myFormat
-  ),
-  transports: [
-    new transports.Console(),
-    new transports.File({ filename: 'error.log', level: 'error'}),
-    new transports.File({ filename: 'log.log'}),
-  ]
-});
-
-export default logger;
+export default log;

@@ -11,7 +11,7 @@
     "build": "tsc",
     "lint": "eslint \"examples/*.ts\" \"tests/*.ts\"",
     "postinstall": "check-node-version --node \">=16\" --npm \">=7\"",
-    "start": "cross-env NODE_OPTIONS='--no-warnings --loader=ts-node/esm' node src/main.ts",
+    "start": "cross-env NODE_OPTIONS='--no-warnings --loader=ts-node/esm' WECHATY_LOG=verbose WECHATY_LOG_PREFIX=\"(StarterBot|App)\" node src/main.ts",
     "start:walnut": "cross-env WECHATY_LOG=verbose WECHATY_PUPPET=wechaty-puppet-walnut npm start",
     "start:service": "cross-env WECHATY_LOG=verbose WECHATY_PUPPET=wechaty-puppet-service npm start",
     "start:wechat:web": "cross-env WECHATY_LOG=verbose WECHATY_PUPPET=wechaty-puppet-wechat npm start",
@@ -34,8 +34,7 @@
     "wechaty-puppet-wechat": "^1.18.4",
     "wechaty-puppet-wechat4u": "~1.11.1",
     "wechaty-puppet-whatsapp": "^1.19.0",
-    "wechaty-puppet-xp": "^1.10.20",
-    "winston": "^3.8.1"
+    "wechaty-puppet-xp": "^1.10.20"
   },
   "devDependencies": {
     "@chatie/eslint-config": "^1.0.4",
