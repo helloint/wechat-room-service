@@ -18,6 +18,7 @@ interface IRoom {
 interface IRoomShareConfig {
   name: string,
   shares: IRoom[],
+  useAlias: boolean,
 }
 
 interface IRoomSetting {

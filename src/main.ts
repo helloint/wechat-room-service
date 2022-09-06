@@ -93,31 +93,33 @@ async function onMessage(msg: Message) {
     log.info('StarterBot', '%s', msg.toString());
     const room = msg.room();
     const topic = await room?.topic();
-    const sender = msg.talker();
-    if (room && topic && !sender.self()) {
+    const talker = msg.talker();
+    const talkerName = talker.name();
+    const talkerAlias = await room?.alias(talker);
+    if (room && topic && !talker.self()) {
       /*
       Web登陆下，room.id和sender.id在每次登陆后都是随机生成的变量，所以没办法用来做唯一标识匹配。
       好在sender.name是WeChat唯一的。
       而群名则需要注意避免重名，不过一般也不会发生。最好是用群备注名做匹配，但不知道如何取到。
        */
       log.verbose('App', `message.type: ${msg.type()}`);
-      log.verbose('App', `room.id: ${room.id}, room.topic: ${topic}`);
-      log.verbose('App', `sender.id: ${sender.id}, sender.name: ${sender.name()}, isSelf: ${sender.self()}`);
+      log.verbose('App', `roomId: ${room.id}, roomAlias: unsupported, roomTopic: ${topic}`);
+      log.verbose('App', `talkerId: ${talker.id}, talkerName: ${talkerName}, talkerAlias: ${talkerAlias}, isSelf: ${talker.self()}`);
 
       setting.rooms.forEach(roomSetting => {
         if ('notifies' in roomSetting) {
           if (roomSetting.topic === topic) {
-            log.verbose('App', 'room match!');
+            log.verbose('App', 'Room match!');
             let senderMatch = true;
             if (roomSetting.people && roomSetting.people.length > 0) {
-              senderMatch = !!roomSetting.people.find(name => name === sender.name());
+              senderMatch = !!roomSetting.people.find(name => name === talkerName);
             }
             if (senderMatch) {
-              log.verbose('App', 'sender match!');
+              log.verbose('App', 'Sender match!');
               roomSetting.notifies.forEach((notifyRoomSetting) => {
                 let notifyRoom = notifyRoomSetting.ref;
                 if (notifyRoom) {
-                  log.verbose('App', `notifyRoom found: ${notifyRoomSetting.topic}`);
+                  log.verbose('App', `Notify Room found: ${notifyRoomSetting.topic}`);
                   if (isJieLong(msg.text())) {
                     notifyRoom.say(createMessage(msg));
                   } else {
@@ -133,21 +135,21 @@ async function onMessage(msg: Message) {
           if (msg.type() === bot.Message.Type.Text) {
             roomSetting.shares.forEach(shareRoomSetting => {
               if (shareRoomSetting.topic === topic) {
-                log.verbose('App', 'room match!');
+                log.verbose('App', 'Room match!');
                 let senderMatch = true;
                 if (shareRoomSetting.people && shareRoomSetting.people.length > 0) {
-                  senderMatch = !!shareRoomSetting.people.find(name => name === sender.name());
+                  senderMatch = !!shareRoomSetting.people.find(name => name === talkerName);
                 }
                 if (senderMatch) {
-                  log.verbose('App', `sender match!`);
+                  log.verbose('App', `Sender match!`);
                   const roomShortName = shareRoomSetting.abbr || shareRoomSetting.topic || 'Nowhere';
-                  const content = createMessage(msg, roomShortName);
-                  log.verbose('App', 'message: ' + content);
+                  const content = createMessage(msg, roomSetting.useAlias ? talkerAlias || talkerName : talkerName, roomShortName);
+                  log.verbose('App', 'Message: ' + content);
                   roomSetting.shares.filter(room => room.topic != topic)
                     .forEach(notifyRoomSetting => {
                       let notifyRoom = notifyRoomSetting.ref;
                       if (notifyRoom) {
-                        log.verbose('App', `notifyRoom found: ${notifyRoomSetting.topic}`);
+                        log.verbose('App', `Share room found: ${notifyRoomSetting.topic}`);
                         notifyRoom.say(content);
                         log.info('App', `Notify Success, topic: ${notifyRoomSetting.topic}`);
                       }
@@ -175,10 +177,13 @@ async function onMessage(msg: Message) {
  *  - - - - - - - - - - - - - - -
  *  [偷笑]
  * @param msg
+ * @param talkerName
  * @param roomName
  */
-const createMessage = (msg: Message, roomName?: string): string => {
-  const talkerName = msg.talker().name();
+const createMessage = (msg: Message, talkerName?: string, roomName?: string): string => {
+  if (!talkerName) {
+    talkerName = msg.talker().name();
+  }
   let msgPrefix = roomName ? `[${talkerName}@${roomName}]:` : talkerName;
   let ret = '';
   if (isJieLong(msg.text())) {
