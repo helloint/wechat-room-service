@@ -92,10 +92,9 @@ async function onMessage(msg: Message) {
   try {
     log.info('StarterBot', '%s', msg.toString());
     const room = msg.room();
-    const topic = await room?.topic();
     const talker = msg.talker();
     const talkerName = talker.name();
-    const talkerAlias = await room?.alias(talker);
+    const [topic, talkerAlias, mentionSelf] = await Promise.all([room?.topic(), room?.alias(talker), msg.mentionSelf()]);
     if (room && topic && !talker.self()) {
       /*
       Web登陆下，room.id和sender.id在每次登陆后都是随机生成的变量，所以没办法用来做唯一标识匹配。
@@ -105,6 +104,7 @@ async function onMessage(msg: Message) {
       log.verbose('App', `message.type: ${msg.type()}`);
       log.verbose('App', `roomId: ${room.id}, roomAlias: unsupported, roomTopic: ${topic}`);
       log.verbose('App', `talkerId: ${talker.id}, talkerName: ${talkerName}, talkerAlias: ${talkerAlias}, isSelf: ${talker.self()}`);
+      log.verbose('App', `mentionSelf: ${mentionSelf}`);
 
       setting.rooms.forEach(roomSetting => {
         if ('notifies' in roomSetting) {
