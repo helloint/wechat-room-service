@@ -125,7 +125,7 @@ async function onMessage(msg: Message) {
                   } else {
                     msg.forward(notifyRoom);
                   }
-                  log.info('App', `Notify Success, topic: ${notifyRoomSetting.topic}`);
+                  log.info('App', `👌 Notify Success, topic: ${notifyRoomSetting.topic}`);
                 }
               });
             }
@@ -151,7 +151,7 @@ async function onMessage(msg: Message) {
                       if (notifyRoom) {
                         log.verbose('App', `Share room found: ${notifyRoomSetting.topic}`);
                         notifyRoom.say(content);
-                        log.info('App', `Notify Success, topic: ${notifyRoomSetting.topic}`);
+                        log.info('App', `👌 Notify Success, topic: ${notifyRoomSetting.topic}`);
                       }
                     });
                 }
@@ -224,7 +224,7 @@ const bot = WechatyBuilder.build({
   // Enable UOS for web login for new WeChat account. See detail: https://www.npmjs.com/package/wechaty-puppet-wechat
   puppet: 'wechaty-puppet-wechat',
   puppetOptions: {
-    uos: true  // 开启uos协议
+    uos: true,  // 开启uos协议
   },
 })
 
