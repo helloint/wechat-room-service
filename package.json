@@ -15,6 +15,7 @@
     "dev": "cross-env WECHATY_LOG=verbose WECHATY_LOG_PREFIX=\"(StarterBot|App)\" npm start",
     "debug": "cross-env WECHATY_LOG=silly npm start",
     "test": "npm-run-all lint test:smoke",
+    "test2": "cross-env NODE_OPTIONS='--no-warnings --loader=ts-node/esm' node src/test.ts",
     "test:smoke": "cross-env NODE_OPTIONS=\"--no-warnings --loader=ts-node/esm\" tap \"tests/**/*.spec.ts\""
   },
   "keywords": [],
@@ -23,6 +24,7 @@
     "dotenv": "^16.0.0",
     "hot-import": "^0.2.14",
     "qrcode-terminal": "^0.12.0",
+    "watchdog": "^0.8.17",
     "wechaty": "^1.18.1",
     "wechaty-cqrs": "^0.7.5",
     "wechaty-plugin-contrib": "^1.11.1",
@@ -40,5 +42,10 @@
     "check-node-version": "^4.2.1",
     "is-pr": "^2.0.0",
     "wechaty-puppet-mock": "^1.18.2"
+  },
+  "git": {
+    "scripts": {
+      "pre-push": "npx git-scripts-pre-push"
+    }
   }
 }

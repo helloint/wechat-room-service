@@ -9,9 +9,6 @@
     "tests/fixtures/"
   ],
   "include": [
-    "examples/*.ts",
-    "scripts/**/*.ts",
     "src/**/*.ts",
-    "tests/**/*.ts"
   ],
 }
