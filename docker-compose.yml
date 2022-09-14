@@ -1,0 +1,5 @@
+version: "3"
+services:
+  wechaty-room-service:
+    build: .
+    image: helloint/wechaty-room-service
