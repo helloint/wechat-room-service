@@ -3,11 +3,12 @@ import {
   Message,
   ScanStatus,
 } from 'wechaty';
-import log from './logger.js';
 // @ts-ignore
 import qrcodeTerminal from 'qrcode-terminal';
+import log from './logger.js';
 import bot from "./bot.js";
-import {initRooms, processMessage} from "./message.js";
+import {initRooms} from "./setting.js";
+import {processMessage} from "./message.js";
 import {registerMonitor, terminateProcess} from "./handler.js";
 
 function onScan(qrcode: string, status: ScanStatus) {

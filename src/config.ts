@@ -19,7 +19,10 @@ const config: IRoomConfig = {
         abbr: '1群', // 别名，会显示在转发消息的开头，[昵称@群别名或群名]: 说的话
       }, {
         topic: '业主群2群',
-        abbr: '2群'
+        abbr: '2群',
+      }, {
+        topic: '业主群3群',
+        abbr: '3群',
       }]
     }
   ]

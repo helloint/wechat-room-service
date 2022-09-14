@@ -1,69 +1,7 @@
-// init setting based on the config
-import type {IRoomConfig, IRoomSetting} from "./type";
-// TODO: use hotImport to renew config.js
-// import {hotImport} from "hot-import";
-// const config: IConfig = await hotImport('config.js')
-import config from "./config.js";
+import type {Message} from "wechaty";
 import bot from "./bot.js";
 import log from "./logger.js";
-import type {Message} from "wechaty";
-
-const initSetting = (config: IRoomConfig): IRoomSetting => {
-  return {
-    rooms: config.rooms.map(room => {
-      if ('notifies' in room) {
-        return {
-          topic: room.topic,
-          people: room.people,
-          notifies: room.notifies.map(notifyRoomTopic => {
-            return {
-              topic: notifyRoomTopic,
-              ref: null,
-            }
-          }),
-          ref: null,
-        }
-      }
-      return {...room}
-    })
-  }
-};
-
-const setting: IRoomSetting = initSetting(config);
-
-const initRooms = () => {
-  // 初始化room，绑定room ref，减少后期查询时间
-  setting.rooms.forEach((async roomSetting => {
-    if ('notifies' in roomSetting) {
-      const listenerRoom = await bot.Room.find({topic: roomSetting.topic});
-      if (listenerRoom) {
-        log.info('App', '👉 process listener room, topic: %s', roomSetting.topic);
-        roomSetting.notifies.forEach((async notifyRoomSetting => {
-          const notifyRoom = await bot.Room.find({topic: notifyRoomSetting.topic});
-          if (notifyRoom) {
-            log.info('App', '✅ registered notify room, topic: %s', notifyRoomSetting.topic);
-            notifyRoomSetting.ref = notifyRoom;
-          } else {
-            log.error('App', '⚠️ notify room not found, topic: %s', notifyRoomSetting.topic);
-          }
-        }));
-      } else {
-        log.error('App', '⚠️ listener room not found, topic: %s', roomSetting.topic);
-      }
-    } else {
-      log.info('App', '👉 process share group, name: %s', roomSetting.name);
-      roomSetting.shares.forEach((async shareRoomSetting => {
-        const shareRoom = await bot.Room.find({topic: shareRoomSetting.topic});
-        if (shareRoom) {
-          log.info('App', '✅ registered share room, topic: %s', shareRoomSetting.topic);
-          shareRoomSetting.ref = shareRoom;
-        } else {
-          log.error('App', '⚠️ share room not found, topic: %s', shareRoomSetting.topic);
-        }
-      }));
-    }
-  }));
-}
+import setting from "./setting.js";
 
 const processMessage = async (msg: Message) => {
   try {
@@ -92,7 +30,7 @@ const processMessage = async (msg: Message) => {
             }
             if (senderMatch) {
               log.verbose('App', 'Sender match!');
-              roomSetting.notifies.forEach((notifyRoomSetting) => {
+              roomSetting.notifies.forEach(notifyRoomSetting => {
                 let notifyRoom = notifyRoomSetting.ref;
                 if (notifyRoom) {
                   log.verbose('App', `Notify Room found: ${notifyRoomSetting.topic}`);
@@ -197,8 +135,6 @@ const isJieLong = (msg: string): boolean => {
 }
 
 export {
-  setting,
-  initRooms,
   processMessage,
   createMessage,
 };
