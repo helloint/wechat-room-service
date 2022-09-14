@@ -9,39 +9,22 @@
   },
   "scripts": {
     "build": "tsc",
-    "lint": "eslint \"examples/*.ts\" \"tests/*.ts\"",
-    "postinstall": "check-node-version --node \">=16\" --npm \">=7\"",
     "start": "cross-env NODE_OPTIONS='--no-warnings --loader=ts-node/esm' node src/main.ts",
-    "dev": "cross-env WECHATY_LOG=verbose WECHATY_LOG_PREFIX=\"(StarterBot|App)\" npm start",
+    "start:js": "node dist/main.js",
     "debug": "cross-env WECHATY_LOG=silly npm start",
-    "test": "npm-run-all lint test:smoke",
-    "test2": "cross-env NODE_OPTIONS='--no-warnings --loader=ts-node/esm' node src/test.ts",
-    "test:smoke": "cross-env NODE_OPTIONS=\"--no-warnings --loader=ts-node/esm\" tap \"tests/**/*.spec.ts\""
+    "debug:log": "cross-env WECHATY_LOG=verbose WECHATY_LOG_PREFIX=\"(StarterBot|App)\" npm start"
   },
   "keywords": [],
   "license": "Apache-2.0",
   "dependencies": {
-    "dotenv": "^16.0.0",
-    "hot-import": "^0.2.14",
     "qrcode-terminal": "^0.12.0",
     "watchdog": "^0.8.17",
     "wechaty": "^1.18.1",
-    "wechaty-cqrs": "^0.7.5",
-    "wechaty-plugin-contrib": "^1.11.1",
-    "wechaty-puppet-oicq": "^1.10.2",
-    "wechaty-puppet-walnut": "^1.11.6",
-    "wechaty-puppet-wechat": "^1.18.4",
-    "wechaty-puppet-wechat4u": "~1.11.1",
-    "wechaty-puppet-whatsapp": "^1.19.0",
-    "wechaty-puppet-xp": "^1.10.20"
+    "wechaty-puppet-wechat": "^1.18.4"
   },
   "devDependencies": {
     "@chatie/eslint-config": "^1.0.4",
-    "@chatie/git-scripts": "^0.6.2",
-    "@chatie/tsconfig": "^4.6.3",
-    "check-node-version": "^4.2.1",
-    "is-pr": "^2.0.0",
-    "wechaty-puppet-mock": "^1.18.2"
+    "@chatie/tsconfig": "^4.6.3"
   },
   "git": {
     "scripts": {
