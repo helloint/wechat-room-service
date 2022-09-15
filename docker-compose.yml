@@ -1,5 +1,5 @@
 version: "3"
 services:
-  wechaty-room-service:
+  wechat-room-service:
     build: .
-    image: helloint/wechaty-room-service
+    image: helloint/wechat-room-service
